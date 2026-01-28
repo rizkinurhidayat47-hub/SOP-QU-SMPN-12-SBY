@@ -1,522 +1,495 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOP-QU | Portal Dokumentasi Digital</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        
-        :root { --primary: #2563eb; }
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #f8fafc;
-            color: #0f172a;
-        }
+import React, { useState } from 'react';
+import { 
+  Settings, 
+  Eye, 
+  Printer, 
+  Plus, 
+  Trash2, 
+  ChevronRight, 
+  FileText, 
+  LayoutGrid, 
+  ArrowLeft,
+  Search,
+  ChevronDown
+} from 'lucide-react';
 
-        .sidebar-active {
-            background-color: white;
-            color: var(--primary);
-            box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.1);
-            border-radius: 14px;
-            font-weight: 700;
-        }
+const App = () => {
+  const [view, setView] = useState('home'); // 'home', 'public_detail', 'admin'
+  const [selectedSopIndex, setSelectedSopIndex] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  // Database awal SOP (Bisa ditambah oleh Admin)
+  const [allSops, setAllSops] = useState([
+    {
+      id: 1,
+      nomorSop: "400.3.8/-/436.7.1.P12/2026",
+      tglBuat: "5 Januari 2026",
+      tglRevisi: "-",
+      tglPengesahan: "6 Januari 2026",
+      disahkanOleh: "Kepala SMPN 12 Surabaya",
+      judulSop: "SOP UKS (Usaha Kesehatan Sekolah)",
+      dasarHukum: ["UU No. 17/2023 tentang Kesehatan", "SE Wali Kota Surabaya Gerakan Sekolah Sehat"],
+      kualifikasi: ["Memahami P3K", "Petugas Admin Sekolah"],
+      keterkaitan: ["Prosedur Pelayanan Siswa"],
+      peralatan: ["Buku Register", "Kotak P3K"],
+      peringatan: ["Kasus berat segera rujuk ke Puskesmas"],
+      pendataan: ["Laporan bulanan kunjungan"],
+      prosedur: [
+        { id: 1, uraian: "Membuka ruang UKS", pelaksana: "Petugas UKS", syarat: "Kunci", waktu: "5 Menit", output: "Siap", tipe: "start" },
+        { id: 2, uraian: "Pengecekan Kebersihan", pelaksana: "Petugas Kebersihan", syarat: "Alat Pel", waktu: "10 Menit", output: "Bersih", tipe: "process" }
+      ],
+      ttd: { tempat: "Surabaya", tanggal: "15 Des 2025", nama: "DARTO, M.Pd.", pangkat: "Pembina Tk. I", nip: "197012062008011010" }
+    },
+    {
+      id: 2,
+      nomorSop: "005/-/436.7.1.P12/2026",
+      judulSop: "Prosedur Pengelolaan Surat Keluar",
+      tglBuat: "10 Januari 2026",
+      tglRevisi: "-",
+      tglPengesahan: "11 Januari 2026",
+      disahkanOleh: "Kepala SMPN 12 Surabaya",
+      dasarHukum: ["Perwali Tata Naskah Dinas"],
+      kualifikasi: ["Mampu Operasi Komputer"],
+      keterkaitan: ["Arsiparis"],
+      peralatan: ["Buku Agenda", "Komputer"],
+      peringatan: ["Nomor surat tidak boleh ganda"],
+      pendataan: ["Buku Agenda"],
+      prosedur: [
+        { id: 1, uraian: "Pembuatan Draft Surat", pelaksana: "Administrasi", syarat: "Konsep", waktu: "30 Menit", output: "Draft", tipe: "process" }
+      ],
+      ttd: { tempat: "Surabaya", tanggal: "15 Des 2025", nama: "DARTO, M.Pd.", pangkat: "Pembina Tk. I", nip: "197012062008011010" }
+    }
+  ]);
 
-        .stat-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-    </style>
-</head>
-<body class="antialiased">
+  // Handler Navigasi
+  const openSop = (index) => {
+    setSelectedSopIndex(index);
+    setView('public_detail');
+  };
 
-    <!-- MODAL LOG IN -->
-    <div id="loginOverlay" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden no-print">
-        <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-md mx-4 border border-slate-100">
-            <div class="text-center mb-8">
-                <div class="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-blue-200">
-                    <i data-lucide="shield-check" class="w-8 h-8"></i>
-                </div>
-                <h2 class="text-2xl font-extrabold text-slate-900">Otentikasi Admin</h2>
-                <p class="text-slate-500 text-sm mt-1">Gunakan akun administrator (admin/admin12)</p>
-            </div>
-            <div class="space-y-4">
-                <input type="text" id="usernameInput" placeholder="Nama Pengguna" class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 transition-all">
-                <input type="password" id="passwordInput" placeholder="Kata Sandi" class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 transition-all">
-                <div id="loginError" class="text-red-500 text-xs hidden text-center font-bold">Kredensial tidak valid.</div>
-                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95">Masuk Sekarang</button>
-                <button onclick="closeLogin()" class="w-full text-slate-400 text-sm font-semibold py-2">Kembali sebagai Tamu</button>
-            </div>
+  const backToHome = () => {
+    setView('home');
+    setSelectedSopIndex(null);
+  };
+
+  const deleteSop = (index) => {
+    if (window.confirm("Hapus SOP ini?")) {
+      const newList = allSops.filter((_, i) => i !== index);
+      setAllSops(newList);
+    }
+  };
+
+  const addNewSop = () => {
+    const template = { 
+      ...allSops[0], 
+      id: Date.now(), 
+      judulSop: "SOP Baru", 
+      nomorSop: "Baru/2026", 
+      prosedur: [] 
+    };
+    setAllSops([...allSops, template]);
+    setSelectedSopIndex(allSops.length);
+    setView('admin');
+  };
+
+  // Filter Search
+  const filteredSops = allSops.filter(s => s.judulSop.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-sm print:bg-white print:p-0">
+      
+      {/* HEADER UTAMA - Hidden on Print */}
+      <nav className="bg-white border-b sticky top-0 z-50 px-6 py-3 flex justify-between items-center shadow-sm print:hidden">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={backToHome}>
+          <div className="bg-blue-600 p-2 rounded-lg text-white">
+            <FileText size={20} />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800 leading-tight">E-SOP SMPN 12 Surabaya</h1>
+            <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Sistem Informasi Standar Operasional Prosedur</p>
+          </div>
         </div>
-    </div>
 
-    <div class="flex h-screen overflow-hidden">
-        <!-- SIDEBAR -->
-        <aside class="w-80 bg-slate-50 border-r border-slate-200 hidden lg:flex flex-col no-print p-8">
-            <div class="flex items-center gap-4 mb-12">
-                <div class="bg-blue-600 p-3 rounded-2xl text-white shadow-lg">
-                    <i data-lucide="layers" class="w-6 h-6"></i>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => setView('home')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${view === 'home' || view === 'public_detail' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-100'}`}
+          >
+            <LayoutGrid size={18} /> Katalog Publik
+          </button>
+          <button 
+            onClick={() => setView('admin')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${view === 'admin' ? 'bg-orange-50 text-orange-600' : 'text-slate-600 hover:bg-slate-100'}`}
+          >
+            <Settings size={18} /> Admin Panel
+          </button>
+        </div>
+      </nav>
+
+      {/* ROUTING VIEWS */}
+      <main className="p-6 max-w-7xl mx-auto">
+        
+        {/* HALAMAN 1: DAFTAR MENU (HOME) */}
+        {view === 'home' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Katalog SOP Sekolah</h2>
+                <p className="text-slate-500">Silahkan pilih SOP untuk melihat prosedur lengkap.</p>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Cari Judul SOP..." 
+                  className="pl-10 pr-4 py-2 border border-slate-200 rounded-xl w-full md:w-80 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredSops.map((sop, idx) => (
+                <div 
+                  key={sop.id} 
+                  className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition group cursor-pointer"
+                  onClick={() => openSop(idx)}
+                >
+                  <div className="text-[10px] font-bold text-blue-600 mb-2 uppercase tracking-widest">{sop.nomorSop}</div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-4 group-hover:text-blue-600 transition h-14 line-clamp-2">{sop.judulSop}</h3>
+                  <div className="flex justify-between items-center text-slate-400 pt-4 border-t">
+                    <span className="text-xs flex items-center gap-1"><Printer size={12}/> Siap Cetak</span>
+                    <div className="bg-slate-50 p-2 rounded-full group-hover:bg-blue-600 group-hover:text-white transition">
+                      <ChevronRight size={20} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* HALAMAN 2: PUBLIK VIEW (DETAIL) */}
+        {view === 'public_detail' && selectedSopIndex !== null && (
+          <div className="animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-center mb-6 print:hidden">
+              <button onClick={backToHome} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-medium">
+                <ArrowLeft size={18} /> Kembali ke Daftar
+              </button>
+              <button 
+                onClick={() => window.print()} 
+                className="bg-slate-900 text-white px-6 py-2 rounded-full flex items-center gap-2 hover:bg-black transition shadow-lg"
+              >
+                <Printer size={18} /> Cetak Dokumen Resmi
+              </button>
+            </div>
+            <div className="flex flex-col gap-10">
+              <KonsepSatu data={allSops[selectedSopIndex]} />
+              <div className="page-break" />
+              <KonsepDua data={allSops[selectedSopIndex]} />
+            </div>
+          </div>
+        )}
+
+        {/* HALAMAN 3: ADMIN PANEL */}
+        {view === 'admin' && (
+          <div className="animate-in fade-in duration-300">
+             <AdminPanel 
+               allSops={allSops} 
+               setAllSops={setAllSops} 
+               deleteSop={deleteSop} 
+               addNewSop={addNewSop}
+               selectedIdx={selectedSopIndex}
+               setSelectedIdx={setSelectedSopIndex}
+             />
+          </div>
+        )}
+
+      </main>
+
+      <style>{`
+        @media print {
+          .page-break { page-break-before: always; }
+          body { background: white; margin: 0; }
+          nav, footer, .print-hide { display: none !important; }
+        }
+        table td, table th { border: 1px solid black !important; }
+      `}</style>
+    </div>
+  );
+};
+
+// --- COMPONENTS ---
+
+const AdminPanel = ({ allSops, setAllSops, deleteSop, addNewSop, selectedIdx, setSelectedIdx }) => {
+  const currentSop = selectedIdx !== null ? allSops[selectedIdx] : null;
+
+  const updateField = (field, value) => {
+    const newList = [...allSops];
+    newList[selectedIdx] = { ...newList[selectedIdx], [field]: value };
+    setAllSops(newList);
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Sidebar Daftar SOP */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm h-fit">
+        <h3 className="font-bold text-slate-700 mb-4 px-2">Daftar SOP</h3>
+        <div className="space-y-1">
+          {allSops.map((sop, idx) => (
+            <div 
+              key={idx}
+              onClick={() => setSelectedIdx(idx)}
+              className={`p-3 rounded-xl cursor-pointer transition flex justify-between items-center group ${selectedIdx === idx ? 'bg-orange-50 border border-orange-200 text-orange-700' : 'hover:bg-slate-50'}`}
+            >
+              <div className="truncate pr-2 font-medium">{sop.judulSop}</div>
+              <button onClick={(e) => { e.stopPropagation(); deleteSop(idx); }} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition">
+                <Trash2 size={14}/>
+              </button>
+            </div>
+          ))}
+        </div>
+        <button 
+          onClick={addNewSop}
+          className="w-full mt-6 py-3 bg-slate-900 text-white rounded-xl flex items-center justify-center gap-2 font-bold hover:bg-black transition"
+        >
+          <Plus size={18}/> Tambah SOP Baru
+        </button>
+      </div>
+
+      {/* Area Edit */}
+      <div className="lg:col-span-3">
+        {currentSop ? (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-8 animate-in slide-in-from-right-4 duration-300">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h2 className="text-xl font-bold text-slate-800">Editor: <span className="text-orange-600 uppercase">{currentSop.judulSop}</span></h2>
+              <div className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs font-bold uppercase tracking-wide">Tersimpan Otomatis</div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-500 text-[10px] uppercase tracking-widest border-l-4 border-orange-500 pl-2">Informasi Dasar</h4>
+                <div>
+                  <label className="text-xs text-slate-500 font-bold uppercase mb-1 block">Judul SOP</label>
+                  <input className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-orange-200 outline-none" value={currentSop.judulSop} onChange={(e) => updateField('judulSop', e.target.value)} />
                 </div>
                 <div>
-                    <h1 class="font-extrabold text-2xl tracking-tighter text-slate-900 leading-none">SOP-QU</h1>
-                    <span class="text-[10px] font-black text-blue-500 uppercase tracking-widest">SMPN 12 Surabaya</span>
+                  <label className="text-xs text-slate-500 font-bold uppercase mb-1 block">Nomor SOP</label>
+                  <input className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-orange-200 outline-none" value={currentSop.nomorSop} onChange={(e) => updateField('nomorSop', e.target.value)} />
                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-500 text-[10px] uppercase tracking-widest border-l-4 border-orange-500 pl-2">Tanggal & Pengesahan</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500 font-bold uppercase mb-1 block">Tgl Pembuatan</label>
+                    <input className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-orange-200 outline-none" value={currentSop.tglBuat} onChange={(e) => updateField('tglBuat', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 font-bold uppercase mb-1 block">Tgl Pengesahan</label>
+                    <input className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-orange-200 outline-none" value={currentSop.tglPengesahan} onChange={(e) => updateField('tglPengesahan', e.target.value)} />
+                  </div>
+                </div>
+              </div>
             </div>
-            
-            <nav class="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-4">Navigasi Utama</div>
-                <button onclick="showSection('dashboard')" class="sidebar-item w-full flex items-center px-5 py-4 text-slate-600 hover:text-blue-600 sidebar-active transition-all" id="nav-dashboard">
-                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-4"></i> <span class="text-sm">Dasbor</span>
-                </button>
-                <button onclick="showSection('listSOP')" class="sidebar-item w-full flex items-center px-5 py-4 text-slate-600 hover:text-blue-600 transition-all" id="nav-listSOP">
-                    <i data-lucide="file-text" class="w-5 h-5 mr-4"></i> <span class="text-sm">E-Dokumen SOP</span>
-                </button>
 
-                <div class="mt-12 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-4">Unit Pelaksana</div>
-                <div id="unitLinks" class="space-y-1"></div>
-            </nav>
-
-            <div class="mt-8 pt-6 border-t border-slate-200">
-                <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
-                    <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold" id="userAvatar">T</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs font-black text-slate-800 truncate" id="userNameDisplay">Mode Tamu</p>
-                        <p class="text-[9px] text-slate-400 font-bold uppercase">Akses Pengunjung</p>
+            {/* Prosedur Editor Section */}
+            <div className="space-y-4 pt-6 border-t">
+              <h4 className="font-bold text-slate-500 text-[10px] uppercase tracking-widest border-l-4 border-blue-500 pl-2">Uraian Langkah Kerja</h4>
+              {currentSop.prosedur.map((step, sIdx) => (
+                <div key={step.id} className="flex gap-4 items-start bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <span className="bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center font-bold text-slate-600 shrink-0">{sIdx+1}</span>
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="md:col-span-2">
+                      <input className="w-full border p-2 rounded text-sm mb-2" placeholder="Uraian Langkah" value={step.uraian} onChange={(e) => {
+                         const newProc = [...currentSop.prosedur];
+                         newProc[sIdx].uraian = e.target.value;
+                         updateField('prosedur', newProc);
+                      }} />
+                      <div className="flex gap-2">
+                        <select className="text-[10px] border rounded px-2" value={step.tipe} onChange={(e) => {
+                           const newProc = [...currentSop.prosedur];
+                           newProc[sIdx].tipe = e.target.value;
+                           updateField('prosedur', newProc);
+                        }}>
+                          <option value="start">Mulai/Selesai</option>
+                          <option value="process">Proses</option>
+                          <option value="decision">Pilihan</option>
+                        </select>
+                        <input className="text-[10px] border rounded px-2 w-full" placeholder="Pelaksana" value={step.pelaksana} onChange={(e) => {
+                           const newProc = [...currentSop.prosedur];
+                           newProc[sIdx].pelaksana = e.target.value;
+                           updateField('prosedur', newProc);
+                        }} />
+                      </div>
                     </div>
-                    <button onclick="toggleLoginAction()" id="loginBtnAction" class="p-2 text-slate-400 hover:text-blue-600 transition-colors">
-                        <i data-lucide="log-in" class="w-5 h-5"></i>
-                    </button>
+                    <input className="border p-2 rounded text-xs h-fit" placeholder="Persyaratan" value={step.syarat} onChange={(e) => {
+                         const newProc = [...currentSop.prosedur];
+                         newProc[sIdx].syarat = e.target.value;
+                         updateField('prosedur', newProc);
+                      }} />
+                    <input className="border p-2 rounded text-xs h-fit" placeholder="Output" value={step.output} onChange={(e) => {
+                         const newProc = [...currentSop.prosedur];
+                         newProc[sIdx].output = e.target.value;
+                         updateField('prosedur', newProc);
+                      }} />
+                  </div>
+                  <button onClick={() => {
+                     const newProc = currentSop.prosedur.filter((_, i) => i !== sIdx);
+                     updateField('prosedur', newProc);
+                  }} className="text-red-400 p-2"><Trash2 size={16}/></button>
                 </div>
+              ))}
+              <button 
+                onClick={() => {
+                  const newProc = [...currentSop.prosedur, { id: Date.now(), uraian: "", pelaksana: "Petugas", syarat: "", waktu: "5 Menit", output: "", tipe: "process" }];
+                  updateField('prosedur', newProc);
+                }}
+                className="w-full py-4 border-2 border-dashed border-slate-200 text-slate-400 hover:text-blue-500 hover:border-blue-500 rounded-2xl flex items-center justify-center gap-2 transition"
+              >
+                <Plus size={20}/> Tambah Langkah Baru
+              </button>
             </div>
-        </aside>
-
-        <!-- MAIN CONTENT -->
-        <main class="flex-1 overflow-y-auto flex flex-col bg-white">
-            <header class="h-24 px-10 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-40 no-print">
-                <div class="flex items-center gap-4">
-                    <h2 class="text-xl font-black text-slate-900" id="sectionTitle">Ringkasan Data</h2>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div class="hidden sm:flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span class="text-[10px] font-bold text-green-700 uppercase tracking-widest">Database Terkoneksi</span>
-                    </div>
-                </div>
-            </header>
-
-            <div class="p-6 md:p-10 max-w-7xl mx-auto w-full">
-                <!-- DASHBOARD SECTION -->
-                <section id="dashboard" class="content-section space-y-10">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="stat-card bg-blue-600 p-8 rounded-[32px] text-white shadow-2xl shadow-blue-200 relative overflow-hidden group">
-                            <i data-lucide="file-check" class="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 group-hover:scale-110 transition-transform"></i>
-                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 mb-2">Total Prosedur</p>
-                            <h3 class="text-5xl font-black mb-1" id="stat-total">0</h3>
-                            <p class="text-xs font-medium opacity-70">Dokumen terintegrasi</p>
-                        </div>
-                        <div class="stat-card bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm flex flex-col justify-center">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Aktif & Berlaku</p>
-                            <h3 class="text-5xl font-black text-slate-900 mb-1" id="stat-active">0</h3>
-                            <p class="text-xs font-bold text-green-500 uppercase tracking-tighter">Verified Official</p>
-                        </div>
-                        <div class="stat-card bg-slate-900 p-8 rounded-[32px] text-white flex flex-col justify-center">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Unit Tercover</p>
-                            <h3 class="text-5xl font-black text-white mb-1" id="stat-units">9</h3>
-                            <p class="text-xs font-medium opacity-60">Lokasi Kerja</p>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
-                        <div class="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-                            <h4 class="font-black text-slate-800 uppercase tracking-widest text-xs">Pembaruan Terakhir Dokumen</h4>
-                            <button onclick="showSection('listSOP')" class="text-blue-600 text-[10px] font-black uppercase tracking-widest">Lihat Semua</button>
-                        </div>
-                        <div class="divide-y divide-slate-50" id="recentSOPs">
-                            <div class="p-10 text-center text-slate-400 text-xs italic">Menunggu sinkronisasi data...</div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- LIST SECTION -->
-                <section id="listSOP" class="content-section hidden">
-                    <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-10 no-print">
-                        <div class="flex gap-4">
-                            <div class="bg-white border border-slate-200 rounded-2xl px-5 py-3.5 flex items-center gap-3">
-                                <i data-lucide="filter" class="w-4 h-4 text-slate-400"></i>
-                                <select id="filterUnit" onchange="renderSOPTable()" class="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer">
-                                    <option value="">Semua Unit</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button onclick="showModalSOP()" id="btnAddSOP" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-blue-100 hover:bg-blue-700 hover:-translate-y-1 transition-all hidden">
-                            <i data-lucide="plus-circle" class="w-5 h-5"></i> Tambah SOP Baru
-                        </button>
-                    </div>
-
-                    <div class="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 border-b border-slate-100">
-                                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                        <th class="px-10 py-6">Nama Prosedur</th>
-                                        <th class="px-10 py-6">Kode & Unit</th>
-                                        <th class="px-10 py-6">Status</th>
-                                        <th class="px-10 py-6 text-right">Navigasi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sopTableBody" class="divide-y divide-slate-50"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- DETAIL SECTION -->
-                <section id="detailSOP" class="content-section hidden">
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6 no-print">
-                        <button onclick="showSection('listSOP')" class="flex items-center gap-3 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-slate-600 font-bold hover:text-blue-600 transition-all shadow-sm">
-                            <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Daftar
-                        </button>
-                        <div id="detailActions" class="flex gap-3"></div>
-                    </div>
-                    <div id="sopDetailContent" class="bg-white shadow-2xl border border-slate-100 p-8 md:p-12 rounded-[40px]">
-                        <!-- Detail content will be injected here -->
-                    </div>
-                </section>
-            </div>
-        </main>
+          </div>
+        ) : (
+          <div className="h-96 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400">
+            <LayoutGrid size={48} className="mb-4 opacity-20" />
+            <p className="font-medium italic">Silahkan pilih SOP di sebelah kiri untuk diedit.</p>
+          </div>
+        )}
+      </div>
     </div>
+  );
+};
 
-    <!-- MODAL FORM (HIDDEN) -->
-    <div id="sopModal" class="fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 hidden no-print">
-        <div class="bg-white w-full max-w-6xl max-h-[90vh] rounded-[40px] shadow-2xl flex flex-col overflow-hidden">
-            <div class="p-8 border-b border-slate-100 flex items-center justify-between">
-                <h3 class="text-2xl font-black text-slate-900" id="modalTitle">Editor SOP Digital</h3>
-                <button onclick="closeModalSOP()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all"><i data-lucide="x"></i></button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-12">
-                <form id="sopForm" class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    <div class="lg:col-span-8 space-y-8">
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Nama Prosedur</label>
-                            <input type="text" id="formNama" class="w-full px-6 py-4 rounded-2xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="grid grid-cols-2 gap-6">
-                            <div>
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Nomor SOP</label>
-                                <input type="text" id="formKode" class="w-full px-6 py-4 rounded-2xl border border-slate-200 font-mono text-sm outline-none">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Unit Kerja</label>
-                                <select id="formUnit" class="w-full px-6 py-4 rounded-2xl border border-slate-200 font-bold outline-none"></select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-4 bg-slate-50 p-6 rounded-[32px] space-y-4">
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Tanggal Pengesahan</label>
-                            <input type="date" id="formTanggal" class="w-full px-5 py-3 rounded-xl border border-slate-200 outline-none">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Status Dokumen</label>
-                            <select id="formStatus" class="w-full px-5 py-3 rounded-xl border border-slate-200 font-bold outline-none">
-                                <option value="Aktif">Aktif / Berlaku</option>
-                                <option value="Nonaktif">Draft / Revisi</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="p-8 border-t flex justify-end gap-4 bg-slate-50/50">
-                <button onclick="closeModalSOP()" class="px-8 py-3 rounded-xl font-bold text-slate-500">Batal</button>
-                <button onclick="saveSOP()" class="px-10 py-3 rounded-xl bg-blue-600 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-100">Simpan Ke Cloud</button>
-            </div>
+const KonsepSatu = ({ data }) => {
+  return (
+    <div className="bg-white p-2 border border-black shadow-sm mx-auto" style={{ width: '210mm' }}>
+      <table className="w-full border-collapse border border-black text-[11px]">
+        <tbody>
+          <tr>
+            <td rowSpan="5" className="w-[15%] text-center p-2 border border-black">
+              <div className="w-16 h-20 bg-slate-50 mx-auto flex flex-col items-center justify-center text-[8px] italic border border-slate-200">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b2/Logo_Kota_Surabaya.png" alt="Sby" className="w-10 mb-1" />
+                LOGO KOTA
+              </div>
+            </td>
+            <td rowSpan="5" className="w-[15%] text-center p-2 border border-black">
+              <div className="w-16 h-20 bg-slate-50 mx-auto flex items-center justify-center text-[8px] italic border border-slate-200 font-bold text-center uppercase leading-none">
+                SMPN 12<br/>SBY
+              </div>
+            </td>
+            <td rowSpan="5" className="w-[40%] text-center font-bold p-4 border border-black align-middle leading-tight">
+              PEMERINTAH KOTA SURABAYA<br />
+              DINAS PENDIDIKAN<br />
+              SMP NEGERI 12 SURABAYA
+            </td>
+            <td className="w-[15%] px-2 border border-black">Nomor SOP</td>
+            <td className="w-[15%] px-2 border border-black">{data.nomorSop}</td>
+          </tr>
+          <tr><td className="px-2 border border-black">Tgl Pembuatan</td><td className="px-2 border border-black">{data.tglBuat}</td></tr>
+          <tr><td className="px-2 border border-black">Tgl Revisi</td><td className="px-2 border border-black">{data.tglRevisi}</td></tr>
+          <tr><td className="px-2 border border-black">Tgl Pengesahan</td><td className="px-2 border border-black">{data.tglPengesahan}</td></tr>
+          <tr><td className="px-2 border border-black">Disahkan oleh</td><td className="px-2 border border-black font-bold uppercase underline">{data.disahkanOleh}</td></tr>
+          <tr>
+            <td colSpan="3" className="border border-black"></td>
+            <td className="px-2 py-6 border border-black font-bold align-middle uppercase text-center bg-slate-100" colSpan="2">
+              {data.judulSop}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className="grid grid-cols-2 border-l border-r border-black">
+        <Section title="Dasar Hukum" list={data.dasarHukum} />
+        <Section title="Kualifikasi Pelaksana" list={data.kualifikasi} />
+        <Section title="Keterkaitan" list={data.keterkaitan} />
+        <Section title="Peralatan/Perlengkapan" list={data.peralatan} />
+        <Section title="Peringatan" list={data.peringatan} />
+        <Section title="Pencatatan dan Pendataan" list={data.pendataan} />
+      </div>
+    </div>
+  );
+};
+
+const Section = ({ title, list }) => (
+  <div className="border-b border-black">
+    <div className="bg-slate-200 text-center font-bold border-b border-black py-1 uppercase text-[10px]">{title}</div>
+    <ol className="list-decimal pl-7 pr-2 py-2 text-[10px] min-h-[60px]">
+      {list.map((v, i) => <li key={i}>{v}</li>)}
+    </ol>
+  </div>
+);
+
+const KonsepDua = ({ data }) => {
+  const pelaksanaHeaders = ["Petugas UKS", "Petugas Kebersihan", "Sarpras"];
+  return (
+    <div className="bg-white p-4 border border-black shadow-sm mx-auto" style={{ width: '210mm' }}>
+      <h3 className="text-center font-bold mb-4 uppercase underline text-[12px]">PROSEDUR {data.judulSop}</h3>
+      <table className="w-full border-collapse border border-black text-[9px]">
+        <thead className="bg-slate-50 text-center align-middle">
+          <tr>
+            <th rowSpan="2" className="border border-black px-1 w-6">No</th>
+            <th rowSpan="2" className="border border-black px-2 w-[35%]">Uraian Prosedur</th>
+            <th colSpan="3" className="border border-black py-1 uppercase">Pelaksana</th>
+            <th colSpan="3" className="border border-black py-1 uppercase font-bold">Mutu Baku</th>
+            <th rowSpan="2" className="border border-black px-2 uppercase">Ket</th>
+          </tr>
+          <tr>
+            {pelaksanaHeaders.map(h => <th key={h} className="border border-black px-1 text-[7px] w-14 font-normal italic">{h}</th>)}
+            <th className="border border-black px-1 text-[7px] font-normal uppercase">Persyaratan</th>
+            <th className="border border-black px-1 text-[7px] font-normal uppercase w-10">Waktu</th>
+            <th className="border border-black px-1 text-[7px] font-normal uppercase">Output</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.prosedur.map((item, idx) => (
+            <tr key={item.id}>
+              <td className="border border-black text-center h-12">{idx + 1}</td>
+              <td className="border border-black px-2 py-1 leading-tight">{item.uraian}</td>
+              {pelaksanaHeaders.map(h => (
+                <td key={h} className="border border-black relative text-center">
+                  {item.pelaksana === h && <Shape type={item.tipe} />}
+                </td>
+              ))}
+              <td className="border border-black px-1 text-[8px] italic">{item.syarat}</td>
+              <td className="border border-black px-1 text-[8px] text-center">{item.waktu}</td>
+              <td className="border border-black px-1 text-[8px] uppercase font-bold">{item.output}</td>
+              <td className="border border-black px-1 text-[8px]">Sesuai Juknis</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="mt-10 flex justify-end text-[10px]">
+        <div className="w-1/3 leading-snug">
+          <p>Dikeluarkan di : Surabaya</p>
+          <p className="border-b border-black pb-1 mb-1">Pada Tanggal : {data.ttd.tanggal}</p>
+          <p className="font-bold">KEPALA SMP NEGERI 12 SURABAYA,</p>
+          <div className="h-16"></div>
+          <p className="font-bold underline uppercase">{data.ttd.nama}</p>
+          <p>{data.ttd.pangkat}</p>
+          <p>NIP {data.ttd.nip}</p>
         </div>
+      </div>
     </div>
+  );
+};
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+const Shape = ({ type }) => {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center p-0">
+      <div className="w-px h-full bg-black absolute z-0 opacity-50"></div>
+      {type === 'start' ? (
+        <div className="w-10 h-4 border border-black rounded-full bg-white z-10 flex items-center justify-center text-[6px] font-bold">START</div>
+      ) : type === 'decision' ? (
+        <div className="w-5 h-5 border border-black rotate-45 bg-white z-10"></div>
+      ) : (
+        <div className="w-8 h-4 border border-black bg-white z-10"></div>
+      )}
+    </div>
+  );
+};
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sop-final-sby-12';
-
-        let sops = [];
-        let isAdmin = false;
-        let editingId = null;
-
-        const UNITS = [
-            { id: 'UKS', name: 'Unit Kesehatan Sekolah', icon: 'heart' },
-            { id: 'BK', name: 'Bimbingan Konseling', icon: 'smile' },
-            { id: 'PERPUS', name: 'Perpustakaan', icon: 'book-open' },
-            { id: 'SATPAM', name: 'Keamanan', icon: 'shield' },
-            { id: 'TU', name: 'Tata Usaha', icon: 'briefcase' },
-            { id: 'LAB', name: 'Laboratorium', icon: 'beaker' }
-        ];
-
-        const dummyData = [
-            { id: 'd1', nama: 'SOP Pelayanan Perpustakaan', unit: 'PERPUS', status: 'Aktif', kode: 'SOP/12/PRP/001', tanggal: '2023-10-10' },
-            { id: 'd2', nama: 'Prosedur Pemeriksaan Kesehatan UKS', unit: 'UKS', status: 'Aktif', kode: 'SOP/12/UKS/002', tanggal: '2023-11-05' }
-        ];
-
-        // GLOBAL FUNCTIONS
-        window.showSection = (id) => {
-            document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('sidebar-active'));
-            if(document.getElementById('nav-'+id)) document.getElementById('nav-'+id).classList.add('sidebar-active');
-            lucide.createIcons();
-        };
-
-        window.viewDetail = (id) => {
-            const sop = sops.find(s => s.id === id);
-            if (!sop) return;
-            
-            const content = document.getElementById('sopDetailContent');
-            const actions = document.getElementById('detailActions');
-            
-            content.innerHTML = `
-                <div class="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
-                    <div class="space-y-4">
-                        <span class="bg-blue-100 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">${sop.unit}</span>
-                        <h2 class="text-4xl font-black text-slate-900 leading-tight">${sop.nama}</h2>
-                        <div class="flex items-center gap-6 text-slate-400 font-bold text-xs uppercase tracking-widest">
-                            <span class="flex items-center gap-2"><i data-lucide="hash" class="w-4 h-4 text-blue-500"></i> ${sop.kode || '-'}</span>
-                            <span class="flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-blue-500"></i> ${sop.tanggal || 'Belum diatur'}</span>
-                        </div>
-                    </div>
-                    <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 min-w-[200px] text-center">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status Dokumen</p>
-                        <span class="text-lg font-black ${sop.status === 'Aktif' ? 'text-green-500' : 'text-slate-400'} uppercase">${sop.status}</span>
-                    </div>
-                </div>
-                
-                <div class="prose prose-slate max-w-none">
-                    <div class="p-8 bg-slate-50 rounded-3xl border border-slate-100 mb-8">
-                        <h4 class="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Deskripsi Prosedur</h4>
-                        <p class="text-slate-600 leading-relaxed">Ini adalah dokumen digital resmi SMPN 12 Surabaya. Detail instruksi kerja dapat dilihat pada lampiran fisik atau menghubungi unit terkait (${sop.unit}).</p>
-                    </div>
-                    <div class="text-center p-12 border-2 border-dashed border-slate-100 rounded-[40px] text-slate-300">
-                        <i data-lucide="file-check-2" class="w-12 h-12 mx-auto mb-4 opacity-20"></i>
-                        <p class="font-bold text-sm italic">Matriks prosedur langkah-demi-langkah sedang dalam proses sinkronisasi.</p>
-                    </div>
-                </div>
-            `;
-
-            actions.innerHTML = isAdmin ? `
-                <button onclick="editSOP('${sop.id}')" class="px-6 py-3 bg-amber-50 text-amber-600 font-bold rounded-2xl hover:bg-amber-100 transition-all flex items-center gap-2">
-                    <i data-lucide="edit-3" class="w-4 h-4"></i> Edit
-                </button>
-                <button onclick="deleteSOP('${sop.id}')" class="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-2xl hover:bg-red-100 transition-all flex items-center gap-2">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i> Hapus
-                </button>
-            ` : '';
-
-            showSection('detailSOP');
-            lucide.createIcons();
-        };
-
-        window.showModalSOP = () => {
-            editingId = null;
-            document.getElementById('sopForm').reset();
-            document.getElementById('modalTitle').innerText = "Tambah SOP Baru";
-            document.getElementById('sopModal').classList.remove('hidden');
-            lucide.createIcons();
-        };
-
-        window.closeModalSOP = () => document.getElementById('sopModal').classList.add('hidden');
-
-        window.editSOP = (id) => {
-            const sop = sops.find(s => s.id === id);
-            if (!sop) return;
-            editingId = id;
-            document.getElementById('formNama').value = sop.nama;
-            document.getElementById('formKode').value = sop.kode || '';
-            document.getElementById('formUnit').value = sop.unit;
-            document.getElementById('formTanggal').value = sop.tanggal || '';
-            document.getElementById('formStatus').value = sop.status;
-            document.getElementById('modalTitle').innerText = "Edit Prosedur";
-            document.getElementById('sopModal').classList.remove('hidden');
-            lucide.createIcons();
-        };
-
-        window.saveSOP = async () => {
-            const data = {
-                nama: document.getElementById('formNama').value,
-                kode: document.getElementById('formKode').value,
-                unit: document.getElementById('formUnit').value,
-                tanggal: document.getElementById('formTanggal').value,
-                status: document.getElementById('formStatus').value,
-                updatedAt: serverTimestamp()
-            };
-
-            if (!data.nama) return alert('Nama SOP wajib diisi!');
-
-            try {
-                if (editingId && !editingId.startsWith('d')) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sops', editingId), data);
-                } else {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'sops'), data);
-                }
-                closeModalSOP();
-                showSection('listSOP');
-            } catch (e) {
-                console.error("Error saving:", e);
-                alert("Gagal menyimpan data ke Cloud.");
-            }
-        };
-
-        window.deleteSOP = async (id) => {
-            if (id.startsWith('d')) return alert("Data contoh tidak dapat dihapus.");
-            if (!confirm("Apakah Anda yakin ingin menghapus dokumen ini?")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sops', id));
-                showSection('listSOP');
-            } catch (e) {
-                console.error("Error deleting:", e);
-            }
-        };
-
-        window.renderDashboard = () => {
-            document.getElementById('stat-total').innerText = sops.length;
-            document.getElementById('stat-active').innerText = sops.filter(s => s.status === 'Aktif').length;
-            
-            const recentContainer = document.getElementById('recentSOPs');
-            if (sops.length === 0) {
-                recentContainer.innerHTML = '<div class="p-10 text-center text-slate-400 text-xs italic">Belum ada data tersedia.</div>';
-                return;
-            }
-            recentContainer.innerHTML = sops.slice(0, 5).map(s => `
-                <div class="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-blue-100 p-3 rounded-xl text-blue-600"><i data-lucide="file-text" class="w-5 h-5"></i></div>
-                        <div>
-                            <p class="font-bold text-slate-800">${s.nama}</p>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${s.unit} • ${s.kode || 'Draft'}</p>
-                        </div>
-                    </div>
-                    <button onclick="viewDetail('${s.id}')" class="p-3 rounded-full hover:bg-white border border-transparent hover:border-slate-200 transition-all text-slate-400"><i data-lucide="chevron-right"></i></button>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        };
-
-        window.renderSOPTable = () => {
-            const filter = document.getElementById('filterUnit').value;
-            const filtered = filter ? sops.filter(s => s.unit === filter) : sops;
-            const tbody = document.getElementById('sopTableBody');
-            
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">Tidak ada dokumen ditemukan untuk unit ini.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(s => `
-                <tr class="hover:bg-slate-50 group">
-                    <td class="px-10 py-6">
-                        <p class="font-bold text-slate-900">${s.nama}</p>
-                    </td>
-                    <td class="px-10 py-6">
-                        <p class="font-mono text-xs text-slate-500">${s.kode || '-'}</p>
-                        <span class="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full font-black text-slate-400 uppercase tracking-widest">${s.unit}</span>
-                    </td>
-                    <td class="px-10 py-6">
-                        <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full ${s.status === 'Aktif' ? 'bg-green-500' : 'bg-slate-300'}"></div>
-                            <span class="text-[10px] font-bold uppercase ${s.status === 'Aktif' ? 'text-green-600' : 'text-slate-400'}">${s.status}</span>
-                        </div>
-                    </td>
-                    <td class="px-10 py-6 text-right">
-                        <button onclick="viewDetail('${s.id}')" class="p-2.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-            lucide.createIcons();
-        };
-
-        window.handleLogin = () => {
-            const u = document.getElementById('usernameInput').value;
-            const p = document.getElementById('passwordInput').value;
-            if(u === 'admin' && p === 'admin12') {
-                isAdmin = true;
-                document.getElementById('btnAddSOP').classList.remove('hidden');
-                document.getElementById('userNameDisplay').innerText = "Administrator";
-                document.getElementById('loginOverlay').classList.add('hidden');
-                document.getElementById('loginBtnAction').innerHTML = '<i data-lucide="log-out" class="w-5 h-5"></i>';
-                renderSOPTable();
-                lucide.createIcons();
-            } else {
-                document.getElementById('loginError').classList.remove('hidden');
-            }
-        };
-
-        window.toggleLoginAction = () => {
-            if(isAdmin) {
-                isAdmin = false;
-                document.getElementById('btnAddSOP').classList.add('hidden');
-                document.getElementById('userNameDisplay').innerText = "Mode Tamu";
-                document.getElementById('loginBtnAction').innerHTML = '<i data-lucide="log-in" class="w-5 h-5"></i>';
-                renderSOPTable();
-                lucide.createIcons();
-            } else {
-                document.getElementById('loginOverlay').classList.remove('hidden');
-            }
-        };
-
-        window.closeLogin = () => document.getElementById('loginOverlay').classList.add('hidden');
-
-        // FIREBASE SYNC
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'sops'));
-                onSnapshot(q, (snapshot) => {
-                    const dbSops = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                    sops = dbSops.length > 0 ? dbSops : dummyData;
-                    renderDashboard();
-                    renderSOPTable();
-                });
-            }
-        });
-
-        // INIT
-        initAuth();
-        const initUI = () => {
-            const unitLinks = document.getElementById('unitLinks');
-            UNITS.forEach(u => {
-                const btn = document.createElement('button');
-                btn.className = "w-full flex items-center px-5 py-3 text-slate-500 hover:text-blue-600 hover:bg-white rounded-xl transition-all group";
-                btn.onclick = () => { document.getElementById('filterUnit').value = u.id; showSection('listSOP'); renderSOPTable(); };
-                btn.innerHTML = `<i data-lucide="${u.icon}" class="w-4 h-4 mr-3 opacity-50 group-hover:opacity-100"></i> <span class="text-xs font-bold">${u.name}</span>`;
-                unitLinks.appendChild(btn);
-
-                const opt = document.createElement('option');
-                opt.value = u.id; opt.innerText = u.name;
-                document.getElementById('filterUnit').appendChild(opt);
-                document.getElementById('formUnit').appendChild(opt.cloneNode(true));
-            });
-            lucide.createIcons();
-        };
-        initUI();
-    </script>
-</body>
-</html>
+export default App;
